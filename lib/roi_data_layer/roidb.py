@@ -4,17 +4,10 @@
 # Licensed under The MIT License [see LICENSE for details]
 # Written by Ross Girshick
 # --------------------------------------------------------
-# --------------------------------------------------------
-# Self-Paced Weakly Supervised Fast R-CNN
-# Written by Enver Sangineto and Moin Nabi, 2017.
-# --------------------------------------------------------
-
-"""Transform a roidb into a trainable roidb by adding a bunch of metadata."""
-
 import numpy as np
 from fast_rcnn.config import cfg
 import utils.cython_bbox
-
+from utils.cython_nms import nms
 def prepare_roidb(imdb):
     """Enrich the imdb's roidb by adding some derived quantities that
     are useful for training. This function precomputes the maximum
@@ -33,6 +26,7 @@ def prepare_roidb(imdb):
         max_classes = gt_overlaps.argmax(axis=1)
         roidb[i]['max_classes'] = max_classes
         roidb[i]['max_overlaps'] = max_overlaps
+
         # sanity checks
         # max overlap of 0 => class should be zero (background)
         zero_inds = np.where(max_overlaps == 0)[0]
@@ -129,6 +123,7 @@ def _compute_targets(rois, overlaps, labels):
 	
 def weakly_supervised_roidb(roidb): # This function can be used to convert a supervised roidb to a Weakly-supervised roidb
     num_image = len(roidb)
+    roidb_s = []
     roidb_w = []
 
     for i in xrange(num_image):
@@ -138,17 +133,38 @@ def weakly_supervised_roidb(roidb): # This function can be used to convert a sup
         gt_classes_nonzero_inds = np.where(roidb[i]['gt_classes'] > 0)[0]
         gt_classes_zero_inds = np.where(roidb[i]['gt_classes'] == 0)[0] 
         img_labels = np.unique(roidb[i]['gt_classes'][gt_classes_nonzero_inds])
-        boxes = roidb[i]['boxes'][gt_classes_zero_inds]
-        gt_classes = np.zeros(gt_classes_zero_inds.shape[0], dtype=np.int32)
-        max_classes = np.zeros(gt_classes_zero_inds.shape[0], dtype=np.int64)
-        max_overlaps = np.zeros(gt_classes_zero_inds.shape[0], dtype=np.float32)
-
         
-        roidb_w.append({'image': image, 
+        if roidb[i]['islabel'][0] <= 2:
+            boxes = roidb[i]['boxes']
+            gt_classes=roidb[i]['gt_classes']
+            max_classes=roidb[i]['max_classes']
+            max_overlaps=roidb[i]['max_overlaps']
+            roidb_s.append({'image': image, 
                         'flipped': flipped,
                         'img_labels': img_labels,
                         'boxes': boxes,
                         'gt_classes': gt_classes,
                         'max_classes': max_classes,
-                        'max_overlaps':max_overlaps})
-    return roidb_w			
+                        'max_overlaps': max_overlaps,
+                        'islabel': roidb[i]['islabel'][0],
+                        'scores': 0})
+
+        elif roidb[i]['islabel'][0] > 2:
+            no_gt_classes_inds = np.where(roidb[i]['gt_classes'] >= 0)[0]
+            boxes = roidb[i]['boxes'][no_gt_classes_inds]
+            gt_classes = roidb[i]['gt_classes'][no_gt_classes_inds]
+            # gt_classes = np.zeros(no_gt_classes_inds.shape[0], dtype=np.int32)
+            max_classes = np.zeros(no_gt_classes_inds.shape[0], dtype=np.int64)
+            max_overlaps = np.zeros(no_gt_classes_inds.shape[0], dtype=np.float32)
+
+            roidb_w.append({'image': image, 
+                        'flipped': flipped,
+                        'img_labels': img_labels,
+                        'boxes': boxes,
+                        'gt_classes': gt_classes,
+                        'max_classes': max_classes,
+                        'max_overlaps': max_overlaps,
+                        'islabel': roidb[i]['islabel'][0],
+                        'scores': 0})
+      
+    return roidb_s,roidb_w 

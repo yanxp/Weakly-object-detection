@@ -10,9 +10,13 @@
 import numpy as np
 import numpy.random as npr
 import cv2
+import os
 from fast_rcnn.config import cfg
 from utils.blob import prep_im_for_blob, im_list_to_blob
-
+try:
+   import cPickle as pickle
+except:
+   import pickle
 def get_minibatch(roidb, num_classes):
     """Given a roidb, construct a minibatch sampled from it."""
     num_images = len(roidb)
@@ -119,6 +123,14 @@ def _get_image_blob(roidb, scale_inds):
     processed_ims = []
     im_scales = []
     for i in xrange(num_images):
+        # print roidb[i]['image']
+        # im_name = roidb[i]['image']
+        # image_name=im_name.split("/")[-1]
+        # cache_file = 'cache/'+image_name+'.pkl'
+        # if os.path.exists(cache_file):
+        #     im_data=open(cache_file,'rb')
+        #     im =pickle.load(im_data)
+        # else:
         im = cv2.imread(roidb[i]['image'])
         if roidb[i]['flipped']:
             im = im[:, ::-1, :]

@@ -1,4 +1,4 @@
-# --------------------------------------------------------
+#--------------------------------------------------------
 # Fast R-CNN
 # Copyright (c) 2015 Microsoft
 # Licensed under The MIT License [see LICENSE for details]
@@ -18,7 +18,11 @@ import cPickle
 import heapq
 from utils.blob import im_list_to_blob
 import os
-
+CLASSES = ( '__background__','aeroplane', 'bicycle', 'bird', 'boat',
+                         'bottle', 'bus', 'car', 'cat', 'chair',
+                         'cow', 'diningtable', 'dog', 'horse',
+                         'motorbike', 'person', 'pottedplant',
+                         'sheep', 'sofa', 'train', 'tvmonitor')
 def _get_image_blob(im):
     """Converts an image into a network input.
 
@@ -207,24 +211,33 @@ def im_detect(net, im, boxes):
 
     return scores, pred_boxes
 
-def vis_detections(im, class_name, dets, thresh=0.3):
+def vis_detections(im, Labels, dets,image_name, thresh=0):
     """Visual debugging of detections."""
     import matplotlib.pyplot as plt
     im = im[:, :, (2, 1, 0)]
-    for i in xrange(np.minimum(10, dets.shape[0])):
-        bbox = dets[i, :4]
-        score = dets[i, -1]
+    plt.cla()
+    plt.imshow(im)
+    for i in xrange(1):
+        bbox=dets
+        score=1
+        class_name=CLASSES[Labels]
         if score > thresh:
-            plt.cla()
-            plt.imshow(im)
             plt.gca().add_patch(
                 plt.Rectangle((bbox[0], bbox[1]),
-                              bbox[2] - bbox[0],
-                              bbox[3] - bbox[1], fill=False,
-                              edgecolor='g', linewidth=3)
-                )
-            plt.title('{}  {:.3f}'.format(class_name, score))
-            plt.show()
+                          bbox[2] - bbox[0],
+                          bbox[3] - bbox[1], fill=False,
+                          edgecolor='g', linewidth=3)
+                    )
+            plt.gca().text(bbox[0], bbox[1] - 2,
+                '{:s} {:.3f}'.format(class_name, score),
+                bbox=dict(facecolor='red', alpha=0.5),
+                fontsize=14, color='white')
+
+        # plt.show()
+    plt.draw()
+    fig = plt.gcf()
+    fig.savefig("images/output_"+image_name)
+
 
 def apply_nms(all_boxes, thresh):
     """Apply non-maximum suppression to all predicted boxes output by the

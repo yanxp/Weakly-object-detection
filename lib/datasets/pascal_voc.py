@@ -142,7 +142,7 @@ class pascal_voc(datasets.imdb):
 
         box_list = []
         for i in xrange(raw_data.shape[0]):
-            box_list.append(raw_data[i][:, (1, 0, 3, 2)] - 1)
+            box_list.append(raw_data[i][:, (1,0,3,2)] - 1)
 
         return self.create_roidb_from_box_list(box_list, gt_roidb)
 
@@ -208,6 +208,7 @@ class pascal_voc(datasets.imdb):
         gt_classes = np.zeros((num_objs), dtype=np.int32)
         overlaps = np.zeros((num_objs, self.num_classes), dtype=np.float32)
 
+        islabel =  np.zeros((num_objs), dtype=np.int32)
         # Load object bounding boxes into a data frame.
         for ix, obj in enumerate(objs):
             # Make pixel indexes 0-based
@@ -220,13 +221,16 @@ class pascal_voc(datasets.imdb):
             boxes[ix, :] = [x1, y1, x2, y2]
             gt_classes[ix] = cls
             overlaps[ix, cls] = 1.0
+            islabel[ix] = num_objs 
+        print num_objs
 
         overlaps = scipy.sparse.csr_matrix(overlaps)
 
         return {'boxes' : boxes,
                 'gt_classes': gt_classes,
                 'gt_overlaps' : overlaps,
-                'flipped' : False}
+                'flipped' : False,
+                'islabel' : islabel}
 
     def _write_voc_results_file(self, all_boxes):
         use_salt = self.config['use_salt']

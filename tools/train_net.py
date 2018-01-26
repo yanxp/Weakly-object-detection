@@ -33,7 +33,7 @@ def parse_args():
                         default=None, type=str)
     parser.add_argument('--iters', dest='max_iters',
                         help='number of iterations to train',
-                        default=50000, type=int)
+                        default=70000, type=int)
     parser.add_argument('--weights', dest='pretrained_model',
                         help='initialize with pretrained model weights',
                         default=None, type=str)
@@ -86,11 +86,9 @@ if __name__ == '__main__':
     roidb = get_training_roidb(imdb)
 
     output_dir = get_output_dir(imdb, None)
-# Download the initialization models/defs and copy them in  the output_dir address, for example:
-#    output_dir = '$SP_FRCN_ROOT/test/' 
     print 'Output will be saved to `{:s}`'.format(output_dir)
 
-    roidb = weakly_supervised_roidb(roidb) 
+ #   roidb_s,roidb_w, = weakly_supervised_roidb(roidb) 
 
     train_net(args.solver, roidb, output_dir,
               pretrained_model=args.pretrained_model,
